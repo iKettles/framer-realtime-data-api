@@ -1,0 +1,50 @@
+import 'source-map-support/register';
+import * as http from 'http';
+import { Server as SocketIO } from 'socket.io';
+import * as express from 'express';
+import * as bodyParser from 'body-parser';
+import * as cors from 'cors';
+import config from './config';
+import initEventsService from './services/events';
+import successResponder from './lib/express-middleware/successResponder';
+import errorResponder from './lib/express-middleware/errorResponder';
+
+export const app = express();
+
+const corsOptions: cors.CorsOptions = {
+  origin: '*',
+  credentials: true,
+  methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE, HEAD',
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+app.use(bodyParser.json());
+app.use(successResponder);
+app.use(errorResponder);
+
+async function startServer() {
+  try {
+    const socketServer = http.createServer();
+    const io = new SocketIO<any, any>(socketServer, {
+      cors: {
+        origin: '*',
+        credentials: true,
+        methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE', 'HEAD'],
+      },
+    });
+    initEventsService(io, app);
+
+    await app.listen(config.apiServerPort);
+    socketServer.listen(config.socketServerPort, '0.0.0.0');
+
+    console.info(
+      `framer-realtime-data-api listening for WebSocket connections on port ${config.socketServerPort} and API requests on port ${config.apiServerPort}`
+    );
+  } catch (err) {
+    console.error(`Error Starting Application: ${err.message || ''}`, err);
+    process.exit(1);
+  }
+}
+
+startServer();

@@ -1,0 +1,3 @@
+#! /bin/bash
+
+pm2 start ./build/index.js --name framer-realtime-data-api 
