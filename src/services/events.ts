@@ -21,7 +21,6 @@ export default (
     DefaultEventsMap,
     {
       globalEvent: any;
-      'globalState:sync': any;
     }
   >,
   apiServer: Application
@@ -38,7 +37,10 @@ export default (
         ...newState,
       };
     }
-    io.emit('globalState:sync', appState.globalState);
+    io.emit('globalEvent', {
+      eventName: 'globalState:sync',
+      payload: appState.globalState,
+    });
     return appState.globalState;
   }
 
@@ -49,14 +51,10 @@ export default (
     socket.on(
       'globalEvent',
       (message: { eventName: string; payload: Partial<PrototypeState> }) => {
-        socket.emit('globalEvent', message);
-
         switch (message.eventName) {
           case 'update:globalState':
             updateGlobalState(message.payload);
             break;
-          default:
-            socket.broadcast.emit('globalEvent', message);
         }
       }
     );
