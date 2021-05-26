@@ -26,8 +26,18 @@ export default (
   >,
   apiServer: Application
 ): void => {
-  function updateGlobalState(newState: PrototypeState, patch = false) {
-    appState.globalState = newState;
+  function updateGlobalState(
+    newState: PrototypeState | Partial<PrototypeState>,
+    patch = false
+  ) {
+    if (!patch) {
+      appState.globalState = newState;
+    } else {
+      appState.globalState = {
+        ...appState.globalState,
+        ...newState,
+      };
+    }
     io.emit('globalStateUpdate', appState.globalState);
     return appState.globalState;
   }
@@ -36,14 +46,20 @@ export default (
     console.log(`Device on socket ID ${socket.id} connected!`);
     appState.connectedDevices.add(socket.id);
 
-    socket.on('globalEvent', (message: any) => {
-      socket.emit('globalEvent', message);
+    socket.on(
+      'globalEvent',
+      (message: { eventName: string; payload: Partial<PrototypeState> }) => {
+        socket.emit('globalEvent', message);
 
-      switch (message.eventName) {
-        default:
-          socket.broadcast.emit('globalEvent', message);
+        switch (message.eventName) {
+          case 'update:state':
+            updateGlobalState(message.payload);
+            break;
+          default:
+            socket.broadcast.emit('globalEvent', message);
+        }
       }
-    });
+    );
   });
 
   /**
