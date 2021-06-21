@@ -1,13 +1,12 @@
 import 'source-map-support/register';
+import * as cors from 'cors';
+import * as express from 'express';
 import * as http from 'http';
 import { Server as SocketIO } from 'socket.io';
-import * as express from 'express';
-import * as bodyParser from 'body-parser';
-import * as cors from 'cors';
 import config from './config';
-import initEventsService from './services/events';
-import successResponder from './lib/express-middleware/successResponder';
 import errorResponder from './lib/express-middleware/errorResponder';
+import successResponder from './lib/express-middleware/successResponder';
+import initEventsService from './services/events';
 
 export const app = express();
 
@@ -19,7 +18,7 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(successResponder);
 app.use(errorResponder);
 
